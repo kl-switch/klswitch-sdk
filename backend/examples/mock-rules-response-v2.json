@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "rules_version": 2,
+  "rules": [
+    {
+      "id": "block_large_transfer",
+      "name": "Block large transfer (tightened)",
+      "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/transfers" } },
+      "enabled": true,
+      "priority": 100,
+      "condition": { "all": [{ "field": "body.amount", "operator": "gt", "value": 50000 }] },
+      "action": { "type": "block", "payload": { "statusCode": 429, "code": "TRANSFER_TOO_LARGE" } }
+    },
+    {
+      "id": "block_restricted_country",
+      "name": "Block restricted country",
+      "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/transfers" } },
+      "enabled": true,
+      "priority": 110,
+      "condition": { "all": [{ "field": "body.country", "operator": "in", "value": ["KP", "IR"] }] },
+      "action": { "type": "block", "payload": { "statusCode": 451, "code": "RESTRICTED_COUNTRY" } }
+    },
+    {
+      "id": "flag_beta_checkout",
+      "name": "Flag beta checkout",
+      "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/checkout" } },
+      "enabled": true,
+      "priority": 10,
+      "condition": { "any": [{ "field": "headers.x-beta", "operator": "exists" }] },
+      "action": { "type": "flag", "payload": { "code": "BETA_CHECKOUT" } }
+    }
+  ]
+}

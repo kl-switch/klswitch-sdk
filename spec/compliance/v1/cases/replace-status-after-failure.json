@@ -1,0 +1,116 @@
+{
+  "id": "replace-status-after-failure",
+  "description": "After good load (version 5) and failed second load, get_status shows last failure while active rules remain from first load.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 5,
+        "rules": [
+          {
+            "id": "active_rule",
+            "name": "Active",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "PUT",
+                "path": "/v1/status/replace-fail"
+              }
+            },
+            "enabled": true,
+            "priority": 10,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.k",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "noop",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 5,
+        "rule_count": 1,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 6,
+        "rules": [
+          {
+            "id": "bad",
+            "name": "Bad",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "PUT",
+                "path": "/v1/status/replace-fail"
+              }
+            },
+            "enabled": true,
+            "priority": 10,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "bogus_op",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": false,
+        "rules_version": 6,
+        "rule_count": 1,
+        "compiled_rule_count": 0,
+        "skipped_rule_count": 1,
+        "errors": [
+          {
+            "code": "INVALID_OPERATOR",
+            "message": "Rule uses an operator that is not supported in v1.",
+            "rule_id": "bad",
+            "field": "condition.operator"
+          }
+        ]
+      }
+    },
+    {
+      "op": "get_status",
+      "expected_engine_status": {
+        "initialized": true,
+        "schema_version": "1.2",
+        "active_rules_version": 5,
+        "rule_count": 1,
+        "last_load_ok": false,
+        "last_error": {
+          "code": "INVALID_OPERATOR",
+          "message": "Rule uses an operator that is not supported in v1.",
+          "rule_id": "bad",
+          "field": "condition.operator"
+        }
+      }
+    }
+  ]
+}

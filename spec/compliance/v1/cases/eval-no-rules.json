@@ -1,0 +1,32 @@
+{
+  "id": "eval-no-rules",
+  "description": "Empty ruleset; evaluate still succeeds with no matches and zero evaluated/skipped counts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 0,
+    "rules": []
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/compliance/v1/no-rules"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {},
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [],
+    "evaluated": 0,
+    "skipped": 0,
+    "errors": []
+  }
+}

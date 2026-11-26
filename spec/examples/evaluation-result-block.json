@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "matched": [
+    {
+      "id": "block_large_payment",
+      "name": "Block large payment",
+      "priority": 100,
+      "action": {
+        "type": "block",
+        "payload": {
+          "statusCode": 429,
+          "code": "RULE_BLOCKED"
+        }
+      }
+    }
+  ],
+  "evaluated": 1,
+  "skipped": 0,
+  "errors": []
+}

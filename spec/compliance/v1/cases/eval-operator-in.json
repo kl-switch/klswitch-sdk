@@ -1,0 +1,75 @@
+{
+  "id": "eval-operator-in",
+  "description": "API selector matches POST /compliance/v1/operators/in; single leaf operator 'in' passes with given facts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_in",
+        "name": "Operator in",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/operators/in"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.tier",
+              "operator": "in",
+              "value": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/operators/in"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "tier": 2
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_in",
+        "name": "Operator in",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

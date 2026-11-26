@@ -1,0 +1,32 @@
+{
+  "id": "eval-effective-in-window",
+  "description": "Rule has an effective window [1000,2000]; now=1500 is inside, so the rule is active and matches.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "block_in_window",
+        "name": "Block within window",
+        "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+        "enabled": true,
+        "priority": 100,
+        "effective": { "from": 1000, "to": 2000 },
+        "condition": { "all": [{ "field": "body.a", "operator": "exists" }] },
+        "action": { "type": "block", "payload": { "statusCode": 403 } }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+    "facts": { "headers": {}, "query": {}, "params": {}, "body": { "a": 1 }, "meta": {} },
+    "now": 1500
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [{ "id": "block_in_window", "name": "Block within window", "priority": 100, "action": { "type": "block", "payload": { "statusCode": 403 } } }],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

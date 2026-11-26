@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.klswitch.examples</groupId>
+    <artifactId>klswitch-examples-java</artifactId>
+    <version>0.0.0</version>
+  </parent>
+
+  <artifactId>klswitch-examples-dropwizard</artifactId>
+  <packaging>jar</packaging>
+  <name>klswitch-examples-dropwizard</name>
+  <description>Dropwizard server exercising klswitch-sdk-java in a real JAX-RS environment.</description>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <dropwizard.version>4.0.7</dropwizard.version>
+    <junit.version>5.10.2</junit.version>
+  </properties>
+
+  <dependencies>
+    <!-- The wrapper under test (installed locally via `mvn install` in ../sdk-java). -->
+    <dependency>
+      <groupId>com.klswitch</groupId>
+      <artifactId>klswitch-sdk-java</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-core</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-testing</artifactId>
+      <version>${dropwizard.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <!-- Build a runnable fat jar so the Dropwizard server can be started directly. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <mainClass>com.klswitch.examples.App</mainClass>
+            </transformer>
+          </transformers>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>module-info.class</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

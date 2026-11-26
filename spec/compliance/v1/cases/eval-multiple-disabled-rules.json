@@ -1,0 +1,113 @@
+{
+  "id": "eval-multiple-disabled-rules",
+  "description": "Three disabled rules share selector; candidate bucket would match but each rule is skipped; evaluated 0, skipped 3.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "disabled_rule_0",
+        "name": "Disabled rule 0",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/multi-disabled"
+          }
+        },
+        "enabled": false,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.x",
+              "operator": "eq",
+              "value": 1
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {}
+        }
+      },
+      {
+        "id": "disabled_rule_1",
+        "name": "Disabled rule 1",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/multi-disabled"
+          }
+        },
+        "enabled": false,
+        "priority": 99,
+        "condition": {
+          "all": [
+            {
+              "field": "body.x",
+              "operator": "eq",
+              "value": 1
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {}
+        }
+      },
+      {
+        "id": "disabled_rule_2",
+        "name": "Disabled rule 2",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/multi-disabled"
+          }
+        },
+        "enabled": false,
+        "priority": 98,
+        "condition": {
+          "all": [
+            {
+              "field": "body.x",
+              "operator": "eq",
+              "value": 1
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/multi-disabled"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "x": 1
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [],
+    "evaluated": 0,
+    "skipped": 3,
+    "errors": []
+  }
+}

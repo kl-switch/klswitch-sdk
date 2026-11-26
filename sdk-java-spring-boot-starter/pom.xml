@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.klswitch</groupId>
+  <artifactId>klswitch-sdk-java-spring-boot-starter</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+  <name>klswitch-sdk-java-spring-boot-starter</name>
+  <description>
+    Spring Boot auto-configuration for the KLSwitch SDK. Drops in via
+    your pom + a single property (`klswitch.token=...`) and the SDK
+    wires itself into the request chain — no hand-rolled filter or
+    bean configuration required.
+  </description>
+
+  <url>https://github.com/kl-switch/klswitch-sdk</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <organization>
+    <name>KLSwitch</name>
+    <url>https://klswitch.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- Maven Central rejects a release with no <developers> entry. It names the
+       publishing organisation, which is what consumers need in order to know
+       who ships the artifact; there is no individual to list. -->
+  <developers>
+    <developer>
+      <id>klswitch</id>
+      <name>KLSwitch</name>
+      <email>dev@klswitch.com</email>
+      <organization>KLSwitch</organization>
+      <organizationUrl>https://klswitch.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/kl-switch/klswitch-sdk.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/kl-switch/klswitch-sdk.git</developerConnection>
+    <url>https://github.com/kl-switch/klswitch-sdk</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring.boot.version>3.3.5</spring.boot.version>
+    <junit.version>5.10.2</junit.version>
+  </properties>
+
+  <dependencies>
+    <!-- Base KLSwitch SDK — installed locally from sibling module. -->
+    <dependency>
+      <groupId>com.klswitch</groupId>
+      <artifactId>klswitch-sdk-java</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+    <!-- Spring Boot auto-configuration scaffolding. Marked compile-scope
+         so adding this starter to a Spring Boot app brings it transitively. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+      <version>${spring.boot.version}</version>
+    </dependency>
+    <!-- spring-web supplies the HandlerInterceptor + WebMvcConfigurer types
+         the starter wires up. Spring Boot apps already pull this transitively
+         (via spring-boot-starter-web); listed explicitly here so the JAR
+         compiles standalone. -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>6.1.14</version>
+    </dependency>
+    <!-- HttpServletRequest / Response — needed at compile time. Provided
+         scope: the Spring Boot app already bundles the embedded servlet
+         container (Tomcat/Jetty) which ships its own copy. -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Tests use the full spring-boot-starter-web + test starter so we can
+         boot a real Spring context and drive requests. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>${spring.boot.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <version>${spring.boot.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

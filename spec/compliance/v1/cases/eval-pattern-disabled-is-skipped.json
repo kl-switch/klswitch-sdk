@@ -1,0 +1,63 @@
+{
+  "id": "eval-pattern-disabled-is-skipped",
+  "description": "A disabled pattern rule is a selector candidate for GET /v1/a and is counted as skipped, never evaluated (rule-model 7.1).",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_disabled",
+        "name": "Disabled pattern",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/**"
+          }
+        },
+        "enabled": false,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/a"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [],
+    "evaluated": 0,
+    "skipped": 1,
+    "errors": []
+  }
+}

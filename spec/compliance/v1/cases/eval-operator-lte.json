@@ -1,0 +1,71 @@
+{
+  "id": "eval-operator-lte",
+  "description": "API selector matches POST /compliance/v1/operators/lte; single leaf operator 'lte' passes with given facts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_lte",
+        "name": "Operator lte",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/operators/lte"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.n",
+              "operator": "lte",
+              "value": 10
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/operators/lte"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "n": 10
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_lte",
+        "name": "Operator lte",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

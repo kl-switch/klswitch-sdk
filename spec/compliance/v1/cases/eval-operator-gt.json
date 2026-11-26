@@ -1,0 +1,71 @@
+{
+  "id": "eval-operator-gt",
+  "description": "API selector matches POST /compliance/v1/operators/gt; single leaf operator 'gt' passes with given facts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_gt",
+        "name": "Operator gt",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/operators/gt"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.n",
+              "operator": "gt",
+              "value": 10
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/operators/gt"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "n": 25
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_gt",
+        "name": "Operator gt",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

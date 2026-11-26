@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "rules_version": 2,
+  "rules": [
+    {
+      "id": "risk_region_and_status",
+      "name": "Risk check for region and status",
+      "selector": {
+        "kind": "api",
+        "keys": {
+          "method": "POST",
+          "path": "/v1/payments/risk-eval"
+        }
+      },
+      "enabled": true,
+      "priority": 50,
+      "condition": {
+        "all": [
+          {
+            "field": "body.amount",
+            "operator": "gt",
+            "value": 0
+          },
+          {
+            "any": [
+              {
+                "field": "body.country",
+                "operator": "eq",
+                "value": "IN"
+              },
+              {
+                "field": "body.country",
+                "operator": "eq",
+                "value": "US"
+              }
+            ]
+          },
+          {
+            "not": {
+              "field": "body.status",
+              "operator": "eq",
+              "value": "blocked"
+            }
+          }
+        ]
+      },
+      "action": {
+        "type": "flag",
+        "payload": {
+          "code": "NEEDS_REVIEW"
+        }
+      },
+      "tags": ["payments", "risk", "nested"]
+    }
+  ]
+}

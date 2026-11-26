@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.klswitch</groupId>
+  <artifactId>klswitch-sdk-java</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+  <name>klswitch-sdk-java</name>
+  <description>Java/Kotlin wrapper for the KLSwitch WASM rule engine.</description>
+
+  <url>https://github.com/kl-switch/klswitch-sdk</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <organization>
+    <name>KLSwitch</name>
+    <url>https://klswitch.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- Maven Central rejects a release with no <developers> entry. It names the
+       publishing organisation, which is what consumers need in order to know
+       who ships the artifact; there is no individual to list. -->
+  <developers>
+    <developer>
+      <id>klswitch</id>
+      <name>KLSwitch</name>
+      <email>dev@klswitch.com</email>
+      <organization>KLSwitch</organization>
+      <organizationUrl>https://klswitch.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/kl-switch/klswitch-sdk.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/kl-switch/klswitch-sdk.git</developerConnection>
+    <url>https://github.com/kl-switch/klswitch-sdk</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <properties>
+    <!-- Build on the installed JDK (21) but target 17 for consumers. -->
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <chicory.version>1.1.0</chicory.version>
+    <jackson.version>2.17.2</jackson.version>
+    <junit.version>5.10.2</junit.version>
+    <spring.version>6.1.14</spring.version>
+  </properties>
+
+  <dependencies>
+    <!-- Pure-Java WASM runtime (no native deps). -->
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+      <version>${chicory.version}</version>
+    </dependency>
+    <!-- JSON in/out across the WASM boundary. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <!-- Jakarta REST API for the optional JAX-RS adapter; 'provided' so non-JAX-RS
+         consumers are unaffected (they just don't use com.klswitch.jaxrs). -->
+    <dependency>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>3.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Jakarta Servlet API for the optional servlet manifest discovery; 'provided'
+         so non-servlet consumers are unaffected (they just don't use
+         com.klswitch.servlet). -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Spring Web MVC for the optional Spring route resolver; 'provided' so
+         non-Spring consumers are unaffected (they just don't use
+         com.klswitch.spring). -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>${spring.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Provides a jakarta.ws.rs.ext.RuntimeDelegate impl so KLSwitchFilter's
+         Response.status(...).build() calls work in unit tests without an
+         embedded JAX-RS container. Test-scope only. -->
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-common</artifactId>
+      <version>3.1.10</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- MockMvc drives a real DispatcherServlet + RequestMappingHandlerMapping,
+         so the Spring resolver is verified against actual dispatch rather than
+         a stub. Test-scope only. -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${spring.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <!--
+        Code coverage. Run with `mvn verify` (binds to the standard phases)
+        or `mvn jacoco:report` after a test run. HTML output lands at
+        target/site/jacoco/index.html; XML at target/site/jacoco/jacoco.xml.
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

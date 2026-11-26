@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:klswitch:spec:schemas:evaluation-result",
+  "title": "EvaluationResult",
+  "description": "Output from WASM evaluate: match list, counters, and structured errors (v1). Matched rules are in priority-descending order; engine emits effective priority (0 if rule omitted priority).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "matched", "evaluated", "skipped", "errors"],
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Whether evaluation completed in a success path (see errors for structured failures)."
+    },
+    "matched": {
+      "type": "array",
+      "description": "All rules that matched selector and conditions, priority-descending; may be empty.",
+      "items": { "$ref": "#/$defs/matchedRule" }
+    },
+    "evaluated": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of rules considered on the evaluation path."
+    },
+    "skipped": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of skipped rules (e.g. disabled); per PRD §11.10."
+    },
+    "errors": {
+      "type": "array",
+      "description": "Structured errors; may be empty.",
+      "items": { "$ref": "#/$defs/errorInfo" }
+    }
+  },
+  "$defs": {
+    "matchedRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "priority", "action"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "priority": {
+          "type": "integer",
+          "description": "Effective priority for this rule (0 if the rule omitted priority in the ruleset)."
+        },
+        "action": {
+          "description": "Same Action shape as in ruleset rules.",
+          "$ref": "#/$defs/action"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Open string in v1; engine returns matched action data."
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional structured payload."
+        }
+      }
+    },
+    "errorInfo": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "rule_id": { "type": "string" },
+        "field": { "type": "string" }
+      },
+      "description": "Same fields as error-info.schema.json; required code and message, optional rule_id and field. additionalProperties not restricted to match that schema."
+    }
+  }
+}

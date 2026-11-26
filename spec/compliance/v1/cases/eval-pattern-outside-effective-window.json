@@ -1,0 +1,68 @@
+{
+  "id": "eval-pattern-outside-effective-window",
+  "description": "A pattern rule with an effective window is a candidate for GET /v1/a but `now` is past its `to`, so it is skipped \u2014 patterns and windows compose (rule-model 7.5, 8.1).",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_windowed",
+        "name": "Windowed pattern",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/**"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        },
+        "effective": {
+          "from": 2000,
+          "to": 3000
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/a"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    },
+    "now": 9999
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [],
+    "evaluated": 0,
+    "skipped": 1,
+    "errors": []
+  }
+}

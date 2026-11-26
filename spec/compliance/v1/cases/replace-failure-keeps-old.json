@@ -1,0 +1,142 @@
+{
+  "id": "replace-failure-keeps-old",
+  "description": "Successful load of ruleset A then failed replacement (invalid rule); evaluate still matches only A's rule.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 1,
+        "rules": [
+          {
+            "id": "only_match_v1",
+            "name": "Stable rule",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/replace/keep"
+              }
+            },
+            "enabled": true,
+            "priority": 100,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.token",
+                  "operator": "eq",
+                  "value": "secret-a"
+                }
+              ]
+            },
+            "action": {
+              "type": "allow",
+              "payload": {
+                "from": "v1"
+              }
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 1,
+        "rule_count": 1,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 99,
+        "rules": [
+          {
+            "id": "broken_replacement",
+            "name": "Broken",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/replace/keep"
+              }
+            },
+            "enabled": true,
+            "priority": 100,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "bogus_op",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": false,
+        "rules_version": 99,
+        "rule_count": 1,
+        "compiled_rule_count": 0,
+        "skipped_rule_count": 1,
+        "errors": [
+          {
+            "code": "INVALID_OPERATOR",
+            "message": "Rule uses an operator that is not supported in v1.",
+            "rule_id": "broken_replacement",
+            "field": "condition.operator"
+          }
+        ]
+      }
+    },
+    {
+      "op": "evaluate",
+      "evaluation_input": {
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/replace/keep"
+          }
+        },
+        "facts": {
+          "headers": {},
+          "query": {},
+          "params": {},
+          "body": {
+            "token": "secret-a"
+          },
+          "meta": {}
+        }
+      },
+      "expected_evaluation_result": {
+        "ok": true,
+        "matched": [
+          {
+            "id": "only_match_v1",
+            "name": "Stable rule",
+            "priority": 100,
+            "action": {
+              "type": "allow",
+              "payload": {
+                "from": "v1"
+              }
+            }
+          }
+        ],
+        "evaluated": 1,
+        "skipped": 0,
+        "errors": []
+      }
+    }
+  ]
+}

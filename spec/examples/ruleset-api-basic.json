@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "rules_version": 1,
+  "rules": [
+    {
+      "id": "block_large_payment",
+      "name": "Block large payment",
+      "selector": {
+        "kind": "api",
+        "keys": {
+          "method": "POST",
+          "path": "/v1/payments/collect"
+        }
+      },
+      "enabled": true,
+      "priority": 100,
+      "condition": {
+        "all": [
+          {
+            "field": "body.amount",
+            "operator": "gt",
+            "value": 50000
+          }
+        ]
+      },
+      "action": {
+        "type": "block",
+        "payload": {
+          "statusCode": 429,
+          "code": "RULE_BLOCKED"
+        }
+      },
+      "tags": ["payments", "risk"]
+    }
+  ]
+}

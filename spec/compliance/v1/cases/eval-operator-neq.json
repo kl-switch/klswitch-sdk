@@ -1,0 +1,71 @@
+{
+  "id": "eval-operator-neq",
+  "description": "API selector matches POST /compliance/v1/operators/neq; single leaf operator 'neq' passes with given facts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_neq",
+        "name": "Operator neq",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/operators/neq"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.token",
+              "operator": "neq",
+              "value": "blocked"
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/operators/neq"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "token": "allowed"
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_neq",
+        "name": "Operator neq",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

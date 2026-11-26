@@ -1,0 +1,177 @@
+{
+  "id": "replace-success",
+  "description": "Load ruleset A, evaluate; load ruleset B (new version); second evaluate observes only B's rule—atomic successful replacement.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 10,
+        "rules": [
+          {
+            "id": "rule_v1",
+            "name": "Version 1 rule",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/v1/replace/demo"
+              }
+            },
+            "enabled": true,
+            "priority": 100,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.phase",
+                  "operator": "eq",
+                  "value": "alpha"
+                }
+              ]
+            },
+            "action": {
+              "type": "route",
+              "payload": {
+                "tag": "v1"
+              }
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 10,
+        "rule_count": 1,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "evaluate",
+      "evaluation_input": {
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/replace/demo"
+          }
+        },
+        "facts": {
+          "headers": {},
+          "query": {},
+          "params": {},
+          "body": {
+            "phase": "alpha"
+          },
+          "meta": {}
+        }
+      },
+      "expected_evaluation_result": {
+        "ok": true,
+        "matched": [
+          {
+            "id": "rule_v1",
+            "name": "Version 1 rule",
+            "priority": 100,
+            "action": {
+              "type": "route",
+              "payload": {
+                "tag": "v1"
+              }
+            }
+          }
+        ],
+        "evaluated": 1,
+        "skipped": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 20,
+        "rules": [
+          {
+            "id": "rule_v2",
+            "name": "Version 2 rule",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/v1/replace/demo"
+              }
+            },
+            "enabled": true,
+            "priority": 100,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.phase",
+                  "operator": "eq",
+                  "value": "beta"
+                }
+              ]
+            },
+            "action": {
+              "type": "route",
+              "payload": {
+                "tag": "v2"
+              }
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 20,
+        "rule_count": 1,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "evaluate",
+      "evaluation_input": {
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/replace/demo"
+          }
+        },
+        "facts": {
+          "headers": {},
+          "query": {},
+          "params": {},
+          "body": {
+            "phase": "beta"
+          },
+          "meta": {}
+        }
+      },
+      "expected_evaluation_result": {
+        "ok": true,
+        "matched": [
+          {
+            "id": "rule_v2",
+            "name": "Version 2 rule",
+            "priority": 100,
+            "action": {
+              "type": "route",
+              "payload": {
+                "tag": "v2"
+              }
+            }
+          }
+        ],
+        "evaluated": 1,
+        "skipped": 0,
+        "errors": []
+      }
+    }
+  ]
+}

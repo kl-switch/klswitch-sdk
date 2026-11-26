@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:klswitch:spec:schemas:evaluation-input",
+  "title": "EvaluationInput",
+  "description": "Input to WASM evaluate: API selector for rule lookup plus structured facts for condition evaluation (v1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selector", "facts"],
+  "properties": {
+    "selector": {
+      "description": "Must match the request context used to shortlist rules (same v1 API shape as in ruleset rules).",
+      "$ref": "#/$defs/selector"
+    },
+    "facts": {
+      "description": "Fact buckets for condition field paths (e.g. body.amount, headers.x-client-id); each bucket may be empty.",
+      "$ref": "#/$defs/facts"
+    },
+    "now": {
+      "type": "integer",
+      "description": "Trusted current time (epoch millis) supplied by the wrapper; the engine has no clock. Optional; only used to gate rules that carry an effective window."
+    }
+  },
+  "$defs": {
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "keys"],
+      "properties": {
+        "kind": {
+          "const": "api",
+          "description": "v1 supports only API selectors."
+        },
+        "keys": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "path"],
+          "properties": {
+            "method": { "type": "string" },
+            "path": { "type": "string" }
+          },
+          "description": "Strict v1: only method and path."
+        }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headers", "query", "params", "body", "meta"],
+      "properties": {
+        "headers": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "HTTP header facts; nested values are unrestricted JSON."
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Query string facts."
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Route/path parameter facts."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Request body facts (typically decoded JSON fields)."
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional host-provided context."
+        }
+      }
+    }
+  }
+}

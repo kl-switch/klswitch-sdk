@@ -1,0 +1,103 @@
+{
+  "id": "eval-nested-not",
+  "description": "API selector matches POST /v1/payments/risk-eval; same nested ruleset; not(body.status eq blocked) holds because status is active (inner eq blocked is false); amount and any-branch still satisfied via IN.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 2,
+    "rules": [
+      {
+        "id": "risk_region_and_status",
+        "name": "Risk check for region and status",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/payments/risk-eval"
+          }
+        },
+        "enabled": true,
+        "priority": 50,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 0
+            },
+            {
+              "any": [
+                {
+                  "field": "body.country",
+                  "operator": "eq",
+                  "value": "IN"
+                },
+                {
+                  "field": "body.country",
+                  "operator": "eq",
+                  "value": "US"
+                }
+              ]
+            },
+            {
+              "not": {
+                "field": "body.status",
+                "operator": "eq",
+                "value": "blocked"
+              }
+            }
+          ]
+        },
+        "action": {
+          "type": "flag",
+          "payload": {
+            "code": "NEEDS_REVIEW"
+          }
+        },
+        "tags": [
+          "payments",
+          "risk",
+          "nested"
+        ]
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/v1/payments/risk-eval"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 100,
+        "country": "IN",
+        "status": "active"
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "risk_region_and_status",
+        "name": "Risk check for region and status",
+        "priority": 50,
+        "action": {
+          "type": "flag",
+          "payload": {
+            "code": "NEEDS_REVIEW"
+          }
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

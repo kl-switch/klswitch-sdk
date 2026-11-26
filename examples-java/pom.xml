@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.klswitch.examples</groupId>
+  <artifactId>klswitch-examples-java</artifactId>
+  <version>0.0.0</version>
+  <packaging>pom</packaging>
+  <name>klswitch-examples-java</name>
+  <description>Runnable demo servers exercising klswitch-sdk-java.</description>
+
+  <!--
+    Two servers, two modules. Dropwizard and Spring Boot each bring their own
+    embedded container and Jackson stack, so they get separate classpaths
+    rather than one jar that resolves the conflict by luck.
+  -->
+  <modules>
+    <module>dropwizard</module>
+    <module>spring</module>
+  </modules>
+</project>

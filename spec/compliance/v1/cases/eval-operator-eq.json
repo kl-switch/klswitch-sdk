@@ -1,0 +1,71 @@
+{
+  "id": "eval-operator-eq",
+  "description": "API selector matches POST /compliance/v1/operators/eq; single leaf operator 'eq' passes with given facts.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_eq",
+        "name": "Operator eq",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/operators/eq"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.token",
+              "operator": "eq",
+              "value": "alpha"
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/operators/eq"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "token": "alpha"
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_eq",
+        "name": "Operator eq",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

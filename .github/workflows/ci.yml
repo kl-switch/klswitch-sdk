@@ -1,0 +1,237 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push makes an in-flight run's answer stale.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Never silently fetch a different Go toolchain than the one set up here.
+  GOTOOLCHAIN: local
+
+jobs:
+  # Cheap, pure-bash gates. These fail in seconds, so a version skew or a
+  # boundary violation doesn't wait behind five language matrices.
+  gates:
+    name: Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: One version across all five artifacts (release-strategy.md §5)
+        run: ./scripts/check-versions.sh
+      - name: The WASM core stays free of host concerns
+        run: ./scripts/check-boundary.sh
+
+  engine:
+    name: Engine + spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # rust-toolchain.toml pins the version; rustup installs it on first use.
+      - run: rustup show
+      # `cargo fmt --check` is NOT a gate yet: the engine has 75 formatting
+      # diffs across 5 files against the pinned rustfmt. Reformatting the frozen
+      # core is its own commit, not a side effect of adding CI — once that lands,
+      # add the check here as blocking.
+      - run: cargo clippy --manifest-path rust-core/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --manifest-path rust-core/Cargo.toml
+      # Well-formed spec JSON, draft 2020-12 schemas, and every spec/examples
+      # payload deserialized into the engine's own domain models.
+      - run: ./scripts/validate-schemas.sh
+
+  wasm:
+    name: Engine artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup show
+      # Rebuilds with the path remaps and refuses to copy a leaky artifact.
+      - run: ./scripts/build-wasm.sh
+      - name: Committed engine matches a rebuild from source
+        run: |
+          if ! git diff --quiet -- '*klswitch_core.wasm'; then
+            echo "::error::The committed klswitch_core.wasm does not match a rebuild of rust-core."
+            echo "Run scripts/build-wasm.sh and commit the result. If the source did not"
+            echo "change, the toolchain in rust-toolchain.toml is not the one that built"
+            echo "the committed engine."
+            git diff --stat -- '*klswitch_core.wasm'
+            exit 1
+          fi
+          echo "Committed engine is byte-identical to a fresh build."
+      - name: All four wrappers bundle the same bytes
+        run: |
+          count=$(md5sum \
+            sdk-go/klswitch_core.wasm \
+            sdk-java/src/main/resources/klswitch_core.wasm \
+            sdk-node/wasm/klswitch_core.wasm \
+            sdk-python/src/klswitch/klswitch_core.wasm \
+            | awk '{print $1}' | sort -u | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::The four bundled engines differ — run scripts/build-wasm.sh."
+            exit 1
+          fi
+          echo "All four copies are identical."
+
+  node:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    defaults:
+      run:
+        working-directory: sdk-node
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+  java:
+    name: Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - run: mvn -B -ntp test -f sdk-java/pom.xml
+      # The starter and both example servers compile against the wrapper jar,
+      # so it has to be in the local repo before they build.
+      - run: mvn -B -ntp -DskipTests install -f sdk-java/pom.xml
+      - run: mvn -B -ntp test -f sdk-java-spring-boot-starter/pom.xml
+      - run: mvn -B -ntp -DskipTests install -f sdk-java-spring-boot-starter/pom.xml
+      - run: mvn -B -ntp test -f examples-java/pom.xml
+
+  go:
+    name: Go ${{ matrix.go }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.22.3', 'stable']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: |
+            sdk-go/go.sum
+            examples-go/go.sum
+      - run: go vet ./...
+        working-directory: sdk-go
+      - run: go test ./...
+        working-directory: sdk-go
+      # The examples module consumes sdk-go through a replace directive, so this
+      # is a real compile of the published surface.
+      - run: go build ./...
+        working-directory: examples-go
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12', '3.13']
+    defaults:
+      run:
+        working-directory: sdk-python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: sdk-python/pyproject.toml
+      - run: pip install -e '.[dev]'
+      - run: pytest -q
+      # mypy is deliberately not a gate yet: sdk-python has 54 pre-existing
+      # strict-mode errors. Kept visible so the count moves down, not up.
+      - run: mypy
+        continue-on-error: true
+
+  package:
+    name: Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --upgrade build
+      # Builds the npm tarball, the wheel + sdist and both jars, then checks
+      # the engine inside each one is the committed engine by sha256. The test
+      # suites run against the working tree, so only this catches a package
+      # that stopped bundling the wasm.
+      - run: ./scripts/build-packages.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  parity:
+    name: Cross-language parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 'stable'
+          cache-dependency-path: sdk-go/go.sum
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: sdk-python/pyproject.toml
+      - run: npm ci
+        working-directory: sdk-node
+      - run: pip install -e '.[dev]'
+        working-directory: sdk-python
+      # Replays only the canonical spec/compliance/v1 fixtures through all four
+      # wrappers and compares the counts — the claim the README makes.
+      - run: ./scripts/check-compliance.sh

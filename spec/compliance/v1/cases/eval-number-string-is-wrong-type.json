@@ -1,0 +1,61 @@
+{
+  "id": "eval-number-string-is-wrong-type",
+  "description": "Pin engine behaviour: a string fact compared to a numeric rule value is treated as 'present-but-wrong-type → false' (rule-model.md §5.1). The rule does not match. Companion to eval-number-int-float-equivalence: prevents the engine from later quietly coercing strings to numbers, which would be a surprising behaviour change for callers that rely on the strict-type contract.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_eq_5",
+        "name": "Eq 5 (integer rule value)",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/numbers/eq"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "eq",
+              "value": 5
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/numbers/eq"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": "5"
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "eval-effective-missing-now",
+  "description": "A windowed rule but the input carries no now: fail-safe, the rule is inactive (skipped), never fires without a trusted clock. Pins the missing-now decision.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "block_in_window",
+        "name": "Block within window",
+        "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+        "enabled": true,
+        "priority": 100,
+        "effective": { "from": 1000, "to": 2000 },
+        "condition": { "all": [{ "field": "body.a", "operator": "exists" }] },
+        "action": { "type": "block", "payload": { "statusCode": 403 } }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+    "facts": { "headers": {}, "query": {}, "params": {}, "body": { "a": 1 }, "meta": {} }
+  },
+  "expected_evaluation_result": { "ok": true, "matched": [], "evaluated": 0, "skipped": 1, "errors": [] }
+}

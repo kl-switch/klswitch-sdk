@@ -1,0 +1,75 @@
+{
+  "id": "eval-pattern-trailing-matches-nested",
+  "description": "Selector path /v1/** matches GET /v1/a/b/c \u2014 `**` absorbs any number of trailing segments.",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_subtree",
+        "name": "Pattern subtree",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/**"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/a/b/c"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "pattern_subtree",
+        "name": "Pattern subtree",
+        "priority": 100,
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

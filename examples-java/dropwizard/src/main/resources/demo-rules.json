@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "rules_version": 1,
+  "rules": [
+    {
+      "id": "block_large_payment",
+      "name": "Block large payment",
+      "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/payments/:id" } },
+      "enabled": true,
+      "priority": 100,
+      "condition": { "all": [{ "field": "body.amount", "operator": "gt", "value": 50000 }] },
+      "action": { "type": "block", "payload": { "statusCode": 429, "code": "PAYMENT_TOO_LARGE" } }
+    },
+    {
+      "id": "block_restricted_region",
+      "name": "Block restricted region",
+      "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/payments/:id" } },
+      "enabled": true,
+      "priority": 110,
+      "condition": { "all": [{ "field": "body.country", "operator": "in", "value": ["KP", "IR"] }] },
+      "action": { "type": "block", "payload": { "statusCode": 451, "code": "RESTRICTED_REGION" } }
+    },
+    {
+      "id": "flag_admin_access",
+      "name": "Flag admin access",
+      "selector": { "kind": "api", "keys": { "method": "GET", "path": "/v1/users/:id" } },
+      "enabled": true,
+      "priority": 50,
+      "condition": {
+        "any": [
+          { "field": "query.role", "operator": "eq", "value": "admin" },
+          { "field": "headers.x-impersonate", "operator": "exists" }
+        ]
+      },
+      "action": { "type": "flag", "payload": { "code": "ADMIN_ACCESS" } }
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+openapi: 3.1.0
+info:
+  title: KLSwitch Rules API
+  version: 1.1.0
+  description: >
+    Contract for the rules-fetch endpoint that SDK wrappers poll. The endpoint
+    returns the full ruleset payload as the response body — the same shape the
+    wrapper passes verbatim into the WASM `load_rules` boundary
+    (spec/schemas/ruleset.schema.json). There is no outer envelope.
+
+    **v1.1 adds server-driven polling.** Every successful response carries
+    two headers that wrappers use to skip redundant work:
+
+      * `ETag` — strong content fingerprint of the ruleset bytes. Wrappers
+        cache it, send `If-None-Match: "<etag>"` on subsequent GETs, and
+        skip the body parse on `304 Not Modified`.
+      * `Cache-Control: max-age=<seconds>` — server-driven polling cadence.
+        Wrappers schedule their next poll from this value (clamped to
+        a sane min/max bound), so the backend can tune polling frequency
+        per service/tier without an SDK config change.
+
+    Wrappers issue `HEAD /v1/ruleset` first for the version probe (cheap,
+    no body) and only `GET` when the ETag has changed. A wrapper talking
+    to a backend that omits these headers degrades gracefully to plain GET
+    on its configured `refreshInterval`.
+
+servers:
+  - url: https://rules.example.com
+    description: Placeholder; the SDK is pointed at any URL via Config.rulesUrl.
+
+components:
+  parameters:
+    AuthorizationHeader:
+      name: Authorization
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Optional; wrappers forward Config.headers unchanged.
+    IfNoneMatchHeader:
+      name: If-None-Match
+      in: header
+      required: false
+      schema:
+        type: string
+      description: >
+        Wrapper-set on every poll after the first. Server compares against the
+        current ETag and replies `304 Not Modified` (empty body) if they match.
+  headers:
+    ETag:
+      description: Strong content fingerprint of the ruleset bytes.
+      schema:
+        type: string
+        example: '"sha256-9a8b7c…"'
+    CacheControl:
+      description: Server-driven polling cadence (seconds).
+      schema:
+        type: string
+        example: "max-age=30"
+
+paths:
+  /v1/ruleset:
+    head:
+      operationId: headRuleset
+      summary: Version probe (cheap)
+      description: >
+        Returns the same headers as GET (`ETag`, `Cache-Control`) with an
+        empty body. Wrappers use this to detect changes without paying for
+        the full ruleset payload.
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        "200":
+          description: Headers only — body is empty.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+        "401":
+          description: Missing/invalid credentials.
+        "404":
+          description: Unknown ruleset.
+    get:
+      operationId: getRuleset
+      summary: Fetch the current ruleset
+      description: >
+        Returns the active ruleset. Wrappers fetch this at init and whenever a
+        HEAD probe surfaces a new ETag. On any non-2xx response the wrapper
+        keeps its last-known-good ruleset.
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/IfNoneMatchHeader"
+      responses:
+        "200":
+          description: The current ruleset payload (passed verbatim to load_rules).
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "../../spec/schemas/ruleset.schema.json"
+              examples:
+                v1:
+                  summary: rules_version 1
+                  externalValue: ../examples/mock-rules-response.json
+                v2:
+                  summary: rules_version 2 (after a rule change)
+                  externalValue: ../examples/mock-rules-response-v2.json
+        "304":
+          description: >
+            Ruleset unchanged since the `If-None-Match` ETag. Wrapper keeps the
+            active ruleset and reschedules its next poll from `Cache-Control`.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+        "401":
+          description: Missing/invalid credentials. Wrapper keeps last-known-good.
+        "404":
+          description: Unknown ruleset. Wrapper keeps last-known-good.
+        "500":
+          description: Provider failure. Wrapper keeps last-known-good and marks the refresh failed.

@@ -1,0 +1,13 @@
+# Pinned, because the committed engine is a published binary.
+#
+# rustc stamps its own commit hash into the remapped std paths it embeds in the
+# artifact, so a different toolchain produces different bytes for identical
+# source. CI gates on "a rebuild is byte-identical to the four committed
+# klswitch_core.wasm copies" — that gate is only meaningful, and only stable,
+# against a fixed toolchain. Bumping this line is a deliberate act: rebuild with
+# scripts/build-wasm.sh and commit the new engine in the same change.
+[toolchain]
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

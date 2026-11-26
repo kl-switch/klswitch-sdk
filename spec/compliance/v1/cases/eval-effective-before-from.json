@@ -1,0 +1,26 @@
+{
+  "id": "eval-effective-before-from",
+  "description": "Effective window [1000,2000]; now=999 is before the start, so the rule is inactive: skipped, not evaluated, not matched.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "block_in_window",
+        "name": "Block within window",
+        "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+        "enabled": true,
+        "priority": 100,
+        "effective": { "from": 1000, "to": 2000 },
+        "condition": { "all": [{ "field": "body.a", "operator": "exists" }] },
+        "action": { "type": "block", "payload": { "statusCode": 403 } }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+    "facts": { "headers": {}, "query": {}, "params": {}, "body": { "a": 1 }, "meta": {} },
+    "now": 999
+  },
+  "expected_evaluation_result": { "ok": true, "matched": [], "evaluated": 0, "skipped": 1, "errors": [] }
+}

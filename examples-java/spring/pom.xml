@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.klswitch.examples</groupId>
+    <artifactId>klswitch-examples-java</artifactId>
+    <version>0.0.0</version>
+  </parent>
+
+  <artifactId>klswitch-examples-spring</artifactId>
+  <packaging>jar</packaging>
+  <name>klswitch-examples-spring</name>
+  <description>Spring Boot server exercising klswitch-sdk-java's Spring route resolver.</description>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring.boot.version>3.3.5</spring.boot.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- The wrapper under test (installed locally via `mvn install` in ../../sdk-java). -->
+    <dependency>
+      <groupId>com.klswitch</groupId>
+      <artifactId>klswitch-sdk-java</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+    <!-- SpringManifestSource and SpringRouteResolver live in the starter, not the
+         core wrapper, so the Spring example has to ask for it explicitly. -->
+    <dependency>
+      <groupId>com.klswitch</groupId>
+      <artifactId>klswitch-sdk-java-spring-boot-starter</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+    <!-- spring-webmvc is 'provided' in the SDK, so the app supplies it. That is
+         the point: non-Spring consumers of the SDK never pull Spring in. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource><directory>src/main/resources</directory></resource>
+      <!-- Share the demo ruleset with the Dropwizard example, so the two
+           servers demonstrably run the same rules rather than two copies
+           that drift. -->
+      <resource>
+        <directory>../dropwizard/src/main/resources</directory>
+        <includes><include>demo-rules.json</include></includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <!-- So @PathVariable/@RequestParam can bind by parameter name. -->
+          <parameters>true</parameters>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <!-- Runnable fat jar: java -jar target/klswitch-examples-spring-0.0.0.jar -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring.boot.version}</version>
+        <executions>
+          <execution><goals><goal>repackage</goal></goals></execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

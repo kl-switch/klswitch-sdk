@@ -1,0 +1,231 @@
+name: Release
+
+# Lockstep: all five artifacts share one version, so one tag releases all of
+# them. See docs/release-strategy.md §5 and .github/RELEASING.md.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Release gate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 'stable'
+          cache-dependency-path: sdk-go/go.sum
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: rustup show
+
+      - name: The tag and every manifest must agree
+        run: ./scripts/check-versions.sh "${GITHUB_REF_NAME}"
+
+      - run: npm ci
+        working-directory: sdk-node
+      # run-compliance-tests.sh runs the Python suite out of this venv, exactly
+      # as it does locally — the script refuses to skip a wrapper, which is what
+      # makes it a release gate rather than a smoke test.
+      - name: Populate the Python venv the gate expects
+        run: |
+          python -m venv sdk-python/.venv
+          sdk-python/.venv/bin/pip install -q -e 'sdk-python[dev]'
+
+      # The documented §6 gate: schema/example validation, the full
+      # cross-language compliance run (rust + all four wrappers against one
+      # freshly built engine), and the boundary check.
+      - run: ./scripts/release-checklist.sh
+
+      - name: Committed engine matches a rebuild
+        run: |
+          if ! git diff --quiet -- '*klswitch_core.wasm'; then
+            echo "::error::The release gate rebuilt the engine and got different bytes."
+            exit 1
+          fi
+
+      - name: Publish plan
+        env:
+          NPM: ${{ vars.PUBLISH_NPM }}
+          PYPI: ${{ vars.PUBLISH_PYPI }}
+          MAVEN: ${{ vars.PUBLISH_MAVEN }}
+        run: |
+          {
+            echo "## Release v${{ steps.version.outputs.version }}"
+            echo
+            echo "| target | enabled by | state |"
+            echo "|---|---|---|"
+            echo "| npm @klswitch/sdk-node | \`vars.PUBLISH_NPM\` | ${NPM:-unset — skipping} |"
+            echo "| PyPI klswitch-sdk | \`vars.PUBLISH_PYPI\` | ${PYPI:-unset — skipping} |"
+            echo "| Maven Central | \`vars.PUBLISH_MAVEN\` | ${MAVEN:-unset — skipping} |"
+            echo "| Go module tag | always | will create \`sdk-go/v${{ steps.version.outputs.version }}\` |"
+            echo
+            echo "Registry setup lives in \`.github/RELEASING.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  npm:
+    name: npm
+    needs: gate
+    # Off until the @klswitch org exists and this repo is a trusted publisher.
+    if: vars.PUBLISH_NPM == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write      # OIDC: trusted publishing + provenance, no token
+    defaults:
+      run:
+        working-directory: sdk-node
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      # Trusted publishing needs a recent npm; the bundled one may predate it.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      # provenance + access come from publishConfig in package.json.
+      - run: npm publish
+
+  pypi:
+    name: PyPI
+    needs: gate
+    # Off until the klswitch-sdk project exists with this repo as its publisher.
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade build
+      - run: python -m build
+        working-directory: sdk-python
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: sdk-python/dist
+
+  maven:
+    name: Maven Central
+    needs: gate
+    # Off, and deliberately loud if switched on before the work is done: the
+    # poms carry no signing, javadoc or sources plugins yet, and Central also
+    # needs a verified com.klswitch namespace (a DNS TXT record on
+    # klswitch.com) plus a published GPG key.
+    if: vars.PUBLISH_MAVEN == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::Maven Central publishing is not wired yet."
+          echo "Required first (see .github/RELEASING.md):"
+          echo "  1. verify the com.klswitch namespace in the Sonatype Central Portal"
+          echo "  2. publish a GPG key and add MAVEN_GPG_PRIVATE_KEY + passphrase secrets"
+          echo "  3. add maven-source, maven-javadoc, maven-gpg and"
+          echo "     central-publishing-maven-plugin to both publishable poms"
+          exit 1
+
+  go:
+    name: Go module tag
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # A Go module in a subdirectory takes its version from a tag prefixed with
+      # that subdirectory, so `go get ...@v0.1.0` only resolves once
+      # `sdk-go/v0.1.0` exists. Nothing is uploaded anywhere — the tag IS the
+      # release.
+      - name: Mirror the release tag for the sdk-go module
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: sdk-go/v${{ needs.gate.outputs.version }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists."
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA"
+            echo "Created $TAG at $GITHUB_SHA."
+          fi
+      - name: Prime the module proxy
+        continue-on-error: true
+        env:
+          GOPROXY: proxy.golang.org
+          V: ${{ needs.gate.outputs.version }}
+        run: go list -m "github.com/kl-switch/klswitch-sdk/sdk-go@v$V" || true
+
+  github-release:
+    name: GitHub release
+    needs: [gate, npm, pypi, maven, go]
+    # Runs when the gate and the Go tag succeeded and no enabled publisher
+    # failed. Skipped publishers are fine; a failed one must not produce a
+    # release note claiming the version shipped.
+    if: |
+      always()
+      && needs.gate.result == 'success'
+      && needs.go.result == 'success'
+      && needs.npm.result != 'failure'
+      && needs.pypi.result != 'failure'
+      && needs.maven.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sdk-node/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --upgrade build
+      # The same artifacts the publish jobs push to the registries, attached to
+      # the release as well — so every version is downloadable and verifiable
+      # from GitHub even for a registry that is not switched on yet.
+      - run: ./scripts/build-packages.sh
+      - name: Add the engine and checksums
+        run: |
+          cp sdk-go/klswitch_core.wasm dist/klswitch_core.wasm
+          ( cd dist && sha256sum ./* > SHA256SUMS )
+          cat dist/SHA256SUMS
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --generate-notes \
+            --title "KLSwitch SDK $GITHUB_REF_NAME" \
+            dist/*

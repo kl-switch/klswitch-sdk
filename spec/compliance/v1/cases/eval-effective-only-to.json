@@ -1,0 +1,32 @@
+{
+  "id": "eval-effective-only-to",
+  "description": "One-sided window with only an end bound (to=2000, no start); now=500 is before the end so the rule is active and matches.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "block_until",
+        "name": "Active until an end time",
+        "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+        "enabled": true,
+        "priority": 100,
+        "effective": { "to": 2000 },
+        "condition": { "all": [{ "field": "body.a", "operator": "exists" }] },
+        "action": { "type": "block", "payload": { "statusCode": 403 } }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+    "facts": { "headers": {}, "query": {}, "params": {}, "body": { "a": 1 }, "meta": {} },
+    "now": 500
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [{ "id": "block_until", "name": "Active until an end time", "priority": 100, "action": { "type": "block", "payload": { "statusCode": 403 } } }],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

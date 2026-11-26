@@ -1,0 +1,20 @@
+{
+  "selector": {
+    "kind": "api",
+    "keys": {
+      "method": "POST",
+      "path": "/v1/payments/collect"
+    }
+  },
+  "facts": {
+    "headers": {
+      "x-client-id": "partner_a"
+    },
+    "query": {},
+    "params": {},
+    "body": {
+      "amount": 70000
+    },
+    "meta": {}
+  }
+}

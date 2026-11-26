@@ -1,0 +1,40 @@
+# General
+.DS_Store
+.idea/
+.vscode/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Rust
+target/
+
+# Java
+*.class
+*.jar
+*.war
+build/
+out/
+
+# Go
+bin/
+coverage.out
+
+# Python (future if added)
+__pycache__/
+*.pyc
+
+# Cursor local noise if needed
+.cursor/cache/
+# Safety additions
+.env*.local
+.next/
+
+# Chromium user-data directory left behind by a browser run against this repo — 4MB of
+# component files (WidevineCdm, Safe Browsing, PKIMetadata), never source.
+cpm/
+
+# Go build output
+examples-go/examples-go

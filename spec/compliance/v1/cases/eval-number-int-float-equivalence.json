@@ -1,0 +1,71 @@
+{
+  "id": "eval-number-int-float-equivalence",
+  "description": "Pin engine behaviour: integer rule value 5 and float fact 5.0 are numerically equal under eq. Prevents cross-language drift — Java/Jackson preserves the float vs int distinction in JSON, while Go's json.Marshal and Node's JSON.stringify drop trailing zeros. If the engine became type-strict, a user rule `body.amount == 5` would silently stop matching Java callers sending Double, even though the same call from Node/Go would match.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "rule_eq_5",
+        "name": "Eq 5 (integer rule value)",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/compliance/v1/numbers/eq"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "eq",
+              "value": 5
+            }
+          ]
+        },
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/compliance/v1/numbers/eq"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5.0
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "rule_eq_5",
+        "name": "Eq 5 (integer rule value)",
+        "priority": 100,
+        "action": {
+          "type": "compliance_hit",
+          "payload": {}
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

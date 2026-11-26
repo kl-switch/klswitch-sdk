@@ -1,0 +1,18 @@
+{
+  "id": "status-empty-engine",
+  "description": "Immediately after create_engine with no load_rules yet; initialized true (creation succeeded); no active rules.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "get_status",
+      "expected_engine_status": {
+        "initialized": true,
+        "schema_version": "1.2",
+        "active_rules_version": null,
+        "rule_count": 0,
+        "last_load_ok": false,
+        "last_error": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:klswitch:spec:schemas:load-rules-result",
+  "title": "LoadRulesResult",
+  "description": "Structured result from WASM load_rules (PRD §11.9): success/partial/failure counts and per-rule load errors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "rules_version",
+    "rule_count",
+    "compiled_rule_count",
+    "skipped_rule_count",
+    "errors"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Whether the load attempt completed in an overall success path (see errors for per-rule issues)."
+    },
+    "rules_version": {
+      "type": "integer",
+      "description": "Integer revision from the loaded ruleset payload (PRD §11.9). Narrower than ruleset input rules_version typing when the payload used a string."
+    },
+    "rule_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rules present in the ruleset array submitted to load_rules."
+    },
+    "compiled_rule_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rules successfully compiled into the active ruleset."
+    },
+    "skipped_rule_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rules skipped (e.g. invalid); see errors for detail."
+    },
+    "errors": {
+      "type": "array",
+      "description": "Structured errors from load/compile; empty on full success.",
+      "items": { "$ref": "#/$defs/errorInfo" }
+    }
+  },
+  "$defs": {
+    "errorInfo": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "rule_id": { "type": "string" },
+        "field": { "type": "string" }
+      },
+      "additionalProperties": true,
+      "description": "Same shape as error-info.schema.json; required code and message, optional rule_id and field."
+    }
+  }
+}

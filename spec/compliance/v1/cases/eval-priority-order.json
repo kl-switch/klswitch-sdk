@@ -1,0 +1,122 @@
+{
+  "id": "eval-priority-order",
+  "description": "Two rules same selector; payment facts satisfy both; matched returned priority-descending (200 then 100).",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 3,
+    "rules": [
+      {
+        "id": "alert_large_transfer",
+        "name": "Alert large transfer",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/payments/collect"
+          }
+        },
+        "enabled": true,
+        "priority": 200,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 10000
+            }
+          ]
+        },
+        "action": {
+          "type": "notify",
+          "payload": {
+            "channel": "risk_webhook",
+            "severity": "warning"
+          }
+        },
+        "tags": ["payments"]
+      },
+      {
+        "id": "block_large_payment",
+        "name": "Block large payment",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/payments/collect"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 50000
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 429,
+            "code": "RULE_BLOCKED"
+          }
+        },
+        "tags": ["payments"]
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/v1/payments/collect"
+      }
+    },
+    "facts": {
+      "headers": {
+        "x-client-id": "partner_a"
+      },
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 70000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "alert_large_transfer",
+        "name": "Alert large transfer",
+        "priority": 200,
+        "action": {
+          "type": "notify",
+          "payload": {
+            "channel": "risk_webhook",
+            "severity": "warning"
+          }
+        }
+      },
+      {
+        "id": "block_large_payment",
+        "name": "Block large payment",
+        "priority": 100,
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 429,
+            "code": "RULE_BLOCKED"
+          }
+        }
+      }
+    ],
+    "evaluated": 2,
+    "skipped": 0,
+    "errors": []
+  }
+}

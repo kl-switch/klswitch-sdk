@@ -1,0 +1,4 @@
+{
+  "error": "RULESET_BUILD_FAILED",
+  "message": "the rules provider could not produce a ruleset (missing required 'rules' / 'rules_version')"
+}

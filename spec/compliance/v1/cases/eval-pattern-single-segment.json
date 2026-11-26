@@ -1,0 +1,75 @@
+{
+  "id": "eval-pattern-single-segment",
+  "description": "Selector path /v1/* matches GET /v1/orders \u2014 `*` covers exactly one segment (rule-model 8.1).",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_one_segment",
+        "name": "Pattern one segment",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/*"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/orders"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "pattern_one_segment",
+        "name": "Pattern one segment",
+        "priority": 100,
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

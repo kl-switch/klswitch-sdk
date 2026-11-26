@@ -1,0 +1,116 @@
+{
+  "id": "eval-equal-priority",
+  "description": "Two enabled rules share the same selector and the same priority (100) and both match. The tie is broken by ascending declaration (rules-array) order, NOT by rule id: 'zeta_rule' is declared before 'alpha_rule', so it appears first in matched (docs/rule-model.md §7.4).",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 5,
+    "rules": [
+      {
+        "id": "zeta_rule",
+        "name": "Zeta rule (declared first)",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/payments/collect"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 1000
+            }
+          ]
+        },
+        "action": {
+          "type": "tag",
+          "payload": {
+            "code": "ZETA"
+          }
+        },
+        "tags": ["tie-break"]
+      },
+      {
+        "id": "alpha_rule",
+        "name": "Alpha rule (declared second)",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "POST",
+            "path": "/v1/payments/collect"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 1000
+            }
+          ]
+        },
+        "action": {
+          "type": "tag",
+          "payload": {
+            "code": "ALPHA"
+          }
+        },
+        "tags": ["tie-break"]
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "POST",
+        "path": "/v1/payments/collect"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 70000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "zeta_rule",
+        "name": "Zeta rule (declared first)",
+        "priority": 100,
+        "action": {
+          "type": "tag",
+          "payload": {
+            "code": "ZETA"
+          }
+        }
+      },
+      {
+        "id": "alpha_rule",
+        "name": "Alpha rule (declared second)",
+        "priority": 100,
+        "action": {
+          "type": "tag",
+          "payload": {
+            "code": "ALPHA"
+          }
+        }
+      }
+    ],
+    "evaluated": 2,
+    "skipped": 0,
+    "errors": []
+  }
+}

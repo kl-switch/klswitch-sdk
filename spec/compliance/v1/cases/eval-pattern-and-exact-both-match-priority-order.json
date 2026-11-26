@@ -1,0 +1,114 @@
+{
+  "id": "eval-pattern-and-exact-both-match-priority-order",
+  "description": "A pattern rule and an exact rule both match GET /v1/orders. Both are returned, ordered by priority descending (200 then 100) \u2014 being more specific does NOT promote the exact rule (rule-model 8.2).",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_rule",
+        "name": "Pattern rule",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/*"
+          }
+        },
+        "enabled": true,
+        "priority": 200,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "notify",
+          "payload": {
+            "channel": "risk"
+          }
+        }
+      },
+      {
+        "id": "exact_rule",
+        "name": "Exact rule",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/orders"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/orders"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "pattern_rule",
+        "name": "Pattern rule",
+        "priority": 200,
+        "action": {
+          "type": "notify",
+          "payload": {
+            "channel": "risk"
+          }
+        }
+      },
+      {
+        "id": "exact_rule",
+        "name": "Exact rule",
+        "priority": 100,
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ],
+    "evaluated": 2,
+    "skipped": 0,
+    "errors": []
+  }
+}

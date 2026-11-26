@@ -1,0 +1,98 @@
+{
+  "name": "@klswitch/sdk-node",
+  "version": "0.1.0",
+  "description": "Node.js/TypeScript wrapper for the KLSwitch WASM rule engine.",
+  "license": "MIT",
+  "author": "KLSwitch <dev@klswitch.com>",
+  "homepage": "https://github.com/kl-switch/klswitch-sdk/tree/main/sdk-node#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kl-switch/klswitch-sdk.git",
+    "directory": "sdk-node"
+  },
+  "bugs": {
+    "url": "https://github.com/kl-switch/klswitch-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./cjs-unsupported.cjs"
+    },
+    "./adapters/nestjs": {
+      "types": "./dist/adapters/nestjs.d.ts",
+      "import": "./dist/adapters/nestjs.js"
+    },
+    "./adapters/express": {
+      "types": "./dist/adapters/express.d.ts",
+      "import": "./dist/adapters/express.js"
+    },
+    "./adapters/fastify": {
+      "types": "./dist/adapters/fastify.d.ts",
+      "import": "./dist/adapters/fastify.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "wasm",
+    "cjs-unsupported.cjs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build:wasm": "../scripts/build-wasm.sh",
+    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_OPTIONS=\"--import tsx\" node --test test/*.test.ts",
+    "test:coverage": "NODE_OPTIONS=\"--import tsx\" node --test --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-coverage-exclude='test/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info test/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.4.22",
+    "@nestjs/core": "^10.4.22",
+    "@nestjs/platform-express": "^10.4.22",
+    "@nestjs/testing": "^10.4.22",
+    "@types/node": "^22.10.0",
+    "@types/supertest": "^7.2.0",
+    "express": "^4.22.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "supertest": "^7.2.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10 || ^11",
+    "@nestjs/core": "^10 || ^11",
+    "express": "^4",
+    "fastify": "^4 || ^5",
+    "reflect-metadata": "^0.1 || ^0.2"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "reflect-metadata": {
+      "optional": true
+    }
+  }
+}

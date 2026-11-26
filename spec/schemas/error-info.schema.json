@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:klswitch:spec:schemas:error-info",
+  "title": "ErrorInfo",
+  "description": "Structured error (PRD §11.8). Required code and message; optional rule_id and field. additionalProperties allowed for forward compatibility—matches $defs.errorInfo in evaluation-result.schema.json and engine-status.schema.json.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["code", "message"],
+  "properties": {
+    "code": { "type": "string" },
+    "message": { "type": "string" },
+    "rule_id": { "type": "string" },
+    "field": { "type": "string" }
+  }
+}

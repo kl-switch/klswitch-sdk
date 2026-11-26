@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "klswitch-sdk"
+version = "0.1.0"
+description = "Python wrapper for the KLSwitch WASM rule engine."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "KLSwitch", email = "dev@klswitch.com" }]
+keywords = ["klswitch", "rules", "wasm", "rule-engine", "feature-flags"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "wasmtime>=20.0.0",
+]
+
+[project.optional-dependencies]
+flask = ["flask>=2.0"]
+fastapi = ["fastapi>=0.100", "httpx>=0.24"]
+django = ["django>=4.2"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "coverage>=7.0",
+    "mypy>=1.10",
+    # Adapter dev deps so we can write + run real-framework tests.
+    "flask>=2.0",
+    "fastapi>=0.100",
+    "httpx>=0.24",
+    "django>=4.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/kl-switch/klswitch-sdk"
+Repository = "https://github.com/kl-switch/klswitch-sdk"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/klswitch"]
+
+# Make sure the bundled WASM artifact and py.typed marker ship in the wheel
+# (hatchling includes .py automatically; everything else needs an explicit include).
+[tool.hatch.build.targets.wheel.force-include]
+"src/klswitch/klswitch_core.wasm" = "klswitch/klswitch_core.wasm"
+"src/klswitch/py.typed" = "klswitch/py.typed"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source = ["src/klswitch"]
+omit = [
+    # The .wasm artefact bundling helper is exercised indirectly through
+    # every Client construction; line coverage is meaningful, but the
+    # `if __name__ == ...` blocks below aren't part of the public surface.
+    "src/klswitch/__main__.py",
+]
+
+[tool.coverage.report]
+# Skip lines that obviously don't need coverage (typing-only branches,
+# defensive re-raises). The patterns mirror the coverage.py defaults plus
+# Python-specific idioms we use in this SDK.
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+    "@overload",
+]
+show_missing = true
+skip_empty = true
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src/klswitch", "tests"]
+
+# Tests stay strict on the things that matter (incompatible types, missing
+# return values) but tolerate the looser style pytest fixtures and helpers
+# usually use.
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false

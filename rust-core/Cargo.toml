@@ -1,0 +1,19 @@
+[package]
+name = "klswitch_core"
+version = "0.1.0"
+edition = "2021"
+description = "KLSwitch rule engine — shared Rust domain types (JSON serde)"
+
+[lib]
+path = "src/lib.rs"
+# rlib for host tests / Rust consumers; cdylib for the wasm32 engine artifact.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.release]
+# Drop the symbol/name section from the shipped engine. Exports live in the
+# wasm export section and survive; only debug names go.
+strip = true

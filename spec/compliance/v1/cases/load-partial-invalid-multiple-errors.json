@@ -1,0 +1,115 @@
+{
+  "id": "load-partial-invalid-multiple-errors",
+  "description": "Three rules: two invalid (bogus_op), one valid; atomic load keeps one compiled rule; two errors in load result.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 42,
+        "rules": [
+          {
+            "id": "valid_rule",
+            "name": "Valid rule",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/compliance/v1/load-partial"
+              }
+            },
+            "enabled": true,
+            "priority": 100,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.ok",
+                  "operator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "action": {
+              "type": "allow",
+              "payload": {}
+            }
+          },
+          {
+            "id": "invalid_a",
+            "name": "Invalid A",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/compliance/v1/load-partial"
+              }
+            },
+            "enabled": true,
+            "priority": 50,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "bogus_op",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          },
+          {
+            "id": "invalid_b",
+            "name": "Invalid B",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/compliance/v1/load-partial"
+              }
+            },
+            "enabled": true,
+            "priority": 40,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.y",
+                  "operator": "bogus_op",
+                  "value": 2
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 42,
+        "rule_count": 3,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 2,
+        "errors": [
+          {
+            "code": "INVALID_OPERATOR",
+            "message": "Rule uses an operator that is not supported in v1.",
+            "rule_id": "invalid_a",
+            "field": "condition.operator"
+          },
+          {
+            "code": "INVALID_OPERATOR",
+            "message": "Rule uses an operator that is not supported in v1.",
+            "rule_id": "invalid_b",
+            "field": "condition.operator"
+          }
+        ]
+      }
+    }
+  ]
+}

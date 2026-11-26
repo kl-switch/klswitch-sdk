@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "rules_version": 4,
+  "rules": [
+    {
+      "id": "block_brute_force_login",
+      "name": "Block brute-force login",
+      "selector": {
+        "kind": "api",
+        "keys": {
+          "method": "POST",
+          "path": "/v1/auth/login"
+        }
+      },
+      "enabled": true,
+      "priority": 100,
+      "condition": {
+        "all": [
+          {
+            "field": "body.failed_attempts",
+            "operator": "gte",
+            "value": 5
+          }
+        ]
+      },
+      "action": {
+        "type": "block",
+        "payload": {
+          "statusCode": 429,
+          "code": "TOO_MANY_ATTEMPTS"
+        }
+      },
+      "tags": ["auth", "risk"]
+    },
+    {
+      "id": "flag_suspicious_login",
+      "name": "Flag suspicious login for review",
+      "selector": {
+        "kind": "api",
+        "keys": {
+          "method": "POST",
+          "path": "/v1/auth/login"
+        }
+      },
+      "enabled": true,
+      "priority": 50,
+      "condition": {
+        "all": [
+          {
+            "field": "meta.ip_reputation",
+            "operator": "eq",
+            "value": "suspicious"
+          },
+          {
+            "field": "body.country",
+            "operator": "in",
+            "value": ["IN", "US", "BR"]
+          }
+        ]
+      },
+      "action": {
+        "type": "flag",
+        "payload": {
+          "code": "NEEDS_REVIEW",
+          "queue": "fraud"
+        }
+      },
+      "tags": ["auth", "risk"]
+    },
+    {
+      "id": "legacy_device_challenge",
+      "name": "Legacy device challenge (disabled)",
+      "selector": {
+        "kind": "api",
+        "keys": {
+          "method": "POST",
+          "path": "/v1/auth/login"
+        }
+      },
+      "enabled": false,
+      "priority": 10,
+      "condition": {
+        "not": {
+          "field": "headers.user-agent",
+          "operator": "exists"
+        }
+      },
+      "action": {
+        "type": "challenge",
+        "payload": {
+          "code": "DEVICE_CHALLENGE"
+        }
+      },
+      "tags": ["auth", "legacy"]
+    }
+  ]
+}

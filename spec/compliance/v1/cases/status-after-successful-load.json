@@ -1,0 +1,87 @@
+{
+  "id": "status-after-successful-load",
+  "description": "After a successful load_rules, get_status reflects active rules version and counts.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 7,
+        "rules": [
+          {
+            "id": "r1",
+            "name": "One",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/status/ok"
+              }
+            },
+            "enabled": true,
+            "priority": 1,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.a",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "allow",
+              "payload": {}
+            }
+          },
+          {
+            "id": "r2",
+            "name": "Two",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/status/other"
+              }
+            },
+            "enabled": true,
+            "priority": 2,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.b",
+                  "operator": "eq",
+                  "value": 2
+                }
+              ]
+            },
+            "action": {
+              "type": "allow",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 7,
+        "rule_count": 2,
+        "compiled_rule_count": 2,
+        "skipped_rule_count": 0,
+        "errors": []
+      }
+    },
+    {
+      "op": "get_status",
+      "expected_engine_status": {
+        "initialized": true,
+        "schema_version": "1.2",
+        "active_rules_version": 7,
+        "rule_count": 2,
+        "last_load_ok": true,
+        "last_error": null
+      }
+    }
+  ]
+}

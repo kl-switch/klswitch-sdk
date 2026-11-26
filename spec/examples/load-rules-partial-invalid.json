@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "rules_version": 3,
+  "rule_count": 2,
+  "compiled_rule_count": 1,
+  "skipped_rule_count": 1,
+  "errors": [
+    {
+      "code": "INVALID_OPERATOR",
+      "message": "Rule uses an operator that is not supported in v1.",
+      "rule_id": "invalid_rule",
+      "field": "condition.operator"
+    }
+  ]
+}

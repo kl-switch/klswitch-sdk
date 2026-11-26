@@ -1,0 +1,23 @@
+{
+  "name": "klswitch-examples",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Runnable Express/Fastify servers exercising @klswitch/sdk-node in a real environment.",
+  "scripts": {
+    "start:express": "tsx src/express-server.ts",
+    "start:fastify": "tsx src/fastify-server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@klswitch/sdk-node": "file:../sdk-node",
+    "express": "^4.21.0",
+    "fastify": "^4.28.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

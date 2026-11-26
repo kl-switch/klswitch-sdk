@@ -1,0 +1,73 @@
+{
+  "id": "status-after-failed-load",
+  "description": "First load_rules on empty engine fails (no valid compiled rules); get_status reports failure and empty active ruleset.",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.0",
+        "rules_version": 1,
+        "rules": [
+          {
+            "id": "only_invalid",
+            "name": "Invalid only",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "POST",
+                "path": "/v1/status/fail-first"
+              }
+            },
+            "enabled": true,
+            "priority": 1,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "bogus_op",
+                  "value": 1
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": false,
+        "rules_version": 1,
+        "rule_count": 1,
+        "compiled_rule_count": 0,
+        "skipped_rule_count": 1,
+        "errors": [
+          {
+            "code": "INVALID_OPERATOR",
+            "message": "Rule uses an operator that is not supported in v1.",
+            "rule_id": "only_invalid",
+            "field": "condition.operator"
+          }
+        ]
+      }
+    },
+    {
+      "op": "get_status",
+      "expected_engine_status": {
+        "initialized": true,
+        "schema_version": "1.2",
+        "active_rules_version": null,
+        "rule_count": 0,
+        "last_load_ok": false,
+        "last_error": {
+          "code": "INVALID_OPERATOR",
+          "message": "Rule uses an operator that is not supported in v1.",
+          "rule_id": "only_invalid",
+          "field": "condition.operator"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "id": "load-invalid-pattern",
+  "description": "A rule whose selector path puts '**' in a non-final position fails to compile with INVALID_SELECTOR_PATTERN. Only that rule is skipped: the ruleset still activates and the valid rule alongside it compiles (rule-model 8.4).",
+  "fixture_kind": "scenario",
+  "steps": [
+    {
+      "op": "load_rules",
+      "ruleset": {
+        "schema_version": "1.2",
+        "rules_version": 7,
+        "rules": [
+          {
+            "id": "bad_pattern",
+            "name": "Non-final double star",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/**/refund"
+              }
+            },
+            "enabled": true,
+            "priority": 10,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "exists"
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          },
+          {
+            "id": "good_rule",
+            "name": "Valid exact rule",
+            "selector": {
+              "kind": "api",
+              "keys": {
+                "method": "GET",
+                "path": "/v1/orders"
+              }
+            },
+            "enabled": true,
+            "priority": 10,
+            "condition": {
+              "all": [
+                {
+                  "field": "body.x",
+                  "operator": "exists"
+                }
+              ]
+            },
+            "action": {
+              "type": "block",
+              "payload": {}
+            }
+          }
+        ]
+      },
+      "expected_load_rules_result": {
+        "ok": true,
+        "rules_version": 7,
+        "rule_count": 2,
+        "compiled_rule_count": 1,
+        "skipped_rule_count": 1,
+        "errors": [
+          {
+            "code": "INVALID_SELECTOR_PATTERN",
+            "message": "'**' is only valid as the final segment of a path pattern (in '/v1/**/refund').",
+            "rule_id": "bad_pattern",
+            "field": "selector.keys.path"
+          }
+        ]
+      }
+    }
+  ]
+}

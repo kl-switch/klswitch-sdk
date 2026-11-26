@@ -1,0 +1,6 @@
+{
+  "code": "INVALID_OPERATOR",
+  "message": "Rule uses an operator that is not supported in v1.",
+  "rule_id": "invalid_rule",
+  "field": "condition.operator"
+}

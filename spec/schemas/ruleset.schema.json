@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:klswitch:spec:schemas:ruleset",
+  "title": "RuleSetPayload",
+  "description": "Full ruleset payload passed from SDK wrapper to WASM load_rules (v1, API selectors only).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rules_version", "rules"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version string (free-form in v1)."
+    },
+    "rules_version": {
+      "description": "Wrapper/backend-provided ruleset revision; integer (e.g. 12) or string (e.g. semantic tag or timestamp) for flexible providers.",
+      "oneOf": [{ "type": "integer" }, { "type": "string" }]
+    },
+    "rules": {
+      "type": "array",
+      "description": "Ordered list of rules; may be empty.",
+      "items": { "$ref": "#/$defs/rule" }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "selector", "enabled", "condition", "action"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable rule identifier; must be unique within this ruleset (JSON Schema cannot enforce uniqueness—engine validates on load)."
+        },
+        "name": { "type": "string" },
+        "selector": {
+          "description": "Shortlists candidate rules by target (v1: API method + path only); evaluated before conditions.",
+          "$ref": "#/$defs/selector"
+        },
+        "enabled": { "type": "boolean" },
+        "priority": {
+          "type": "integer",
+          "description": "Optional; engine treats absent priority as 0."
+        },
+        "condition": {
+          "description": "Boolean tree (all / any / not / leaf) evaluated only on rules already matched by the selector; missing fact fields evaluate false.",
+          "$ref": "#/$defs/conditionNode"
+        },
+        "action": {
+          "description": "Structured outcome for matched rules; returned to the host—engine does not execute host business logic.",
+          "$ref": "#/$defs/action"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Opaque metadata; not used in evaluation."
+        },
+        "effective": {
+          "description": "Optional effective window; the rule only matches while from <= now <= to (inclusive, epoch millis). Both bounds optional; absent/empty = always active. Engine enforces from <= to on load.",
+          "$ref": "#/$defs/effective"
+        }
+      }
+    },
+    "effective": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "integer", "description": "Inclusive start, epoch millis; optional." },
+        "to": { "type": "integer", "description": "Inclusive end, epoch millis; optional." }
+      }
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "keys"],
+      "properties": {
+        "kind": {
+          "const": "api",
+          "description": "v1 supports only API selectors."
+        },
+        "keys": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "path"],
+          "properties": {
+            "method": { "type": "string" },
+            "path": { "type": "string" }
+          },
+          "description": "Strict v1: only method and path."
+        }
+      }
+    },
+    "conditionNode": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/conditionNode" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": {
+            "any": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/conditionNode" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": {
+            "not": { "$ref": "#/$defs/conditionNode" }
+          }
+        },
+        { "$ref": "#/$defs/conditionLeaf" }
+      ]
+    },
+    "conditionLeaf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "operator"],
+      "properties": {
+        "field": { "type": "string" },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "contains",
+            "not_contains",
+            "in",
+            "not_in",
+            "exists",
+            "not_exists"
+          ]
+        },
+        "value": { "$ref": "#/$defs/conditionValue" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "enum": [
+                  "eq",
+                  "neq",
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte",
+                  "contains",
+                  "not_contains",
+                  "in",
+                  "not_in"
+                ]
+              }
+            },
+            "required": ["operator"]
+          },
+          "then": { "required": ["field", "operator", "value"] }
+        }
+      ]
+    },
+    "conditionValue": {
+      "description": "Leaf comparison value for v1: scalar, null, or array (e.g. in/not_in). Object values are not allowed—extend in a later schema if needed.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        {
+          "type": "array",
+          "items": true
+        }
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Open string in v1; engine returns matched action data."
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional structured payload."
+        }
+      }
+    }
+  }
+}

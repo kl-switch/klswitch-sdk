@@ -1,0 +1,75 @@
+{
+  "id": "eval-pattern-matches-templated-param",
+  "description": "Selector path /v1/orders/* matches the templated route GET /v1/orders/:id \u2014 paths arrive templated, so a parameter segment is ordinary text to `*` (rule-model 8.1).",
+  "ruleset": {
+    "schema_version": "1.2",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "pattern_param",
+        "name": "Pattern over a route param",
+        "selector": {
+          "kind": "api",
+          "keys": {
+            "method": "GET",
+            "path": "/v1/orders/*"
+          }
+        },
+        "enabled": true,
+        "priority": 100,
+        "condition": {
+          "all": [
+            {
+              "field": "body.amount",
+              "operator": "gt",
+              "value": 100
+            }
+          ]
+        },
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": {
+      "kind": "api",
+      "keys": {
+        "method": "GET",
+        "path": "/v1/orders/:id"
+      }
+    },
+    "facts": {
+      "headers": {},
+      "query": {},
+      "params": {},
+      "body": {
+        "amount": 5000
+      },
+      "meta": {}
+    }
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [
+      {
+        "id": "pattern_param",
+        "name": "Pattern over a route param",
+        "priority": 100,
+        "action": {
+          "type": "block",
+          "payload": {
+            "statusCode": 403
+          }
+        }
+      }
+    ],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "eval-effective-no-window-ignores-now",
+  "description": "A rule with no effective window matches regardless of now (now is present but irrelevant). Proves the field is truly optional and now only affects windowed rules.",
+  "ruleset": {
+    "schema_version": "1.0",
+    "rules_version": 1,
+    "rules": [
+      {
+        "id": "always_on",
+        "name": "No window",
+        "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+        "enabled": true,
+        "priority": 100,
+        "condition": { "all": [{ "field": "body.a", "operator": "exists" }] },
+        "action": { "type": "block", "payload": { "statusCode": 403 } }
+      }
+    ]
+  },
+  "evaluation_input": {
+    "selector": { "kind": "api", "keys": { "method": "POST", "path": "/v1/orders" } },
+    "facts": { "headers": {}, "query": {}, "params": {}, "body": { "a": 1 }, "meta": {} },
+    "now": 5000
+  },
+  "expected_evaluation_result": {
+    "ok": true,
+    "matched": [{ "id": "always_on", "name": "No window", "priority": 100, "action": { "type": "block", "payload": { "statusCode": 403 } } }],
+    "evaluated": 1,
+    "skipped": 0,
+    "errors": []
+  }
+}
